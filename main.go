@@ -1,7 +1,7 @@
 package main
 
 import (
-	"faucet/config"
+	_ "faucet/config"
 	"faucet/logger"
 	"faucet/route"
 	"fmt"
@@ -11,9 +11,6 @@ import (
 )
 
 func main() {
-	// 初始化配置
-	config.InitConfig()
-
 	// 初始化日志
 	logFile := viper.GetString("log.file")
 	logLevel := viper.GetString("log.level")
