@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"evm-faucet-backend/internal/logger"
+	"faucet/logger"
 	"time"
 
 	"github.com/gin-gonic/gin"

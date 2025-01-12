@@ -5,16 +5,19 @@ import (
 	"math/big"
 )
 
-type RequestFaucet struct {
+type FaucetRequest struct {
 	Address     string `json:"address" binding:"required"`
 	Amount      string `json:"amount" binding:"required"`
 	TokenSymbol string `json:"token_symbol" binding:"required"`
 	ChainID     string `json:"chain_id" binding:"required"`
 }
 
-func ethToWei(ethAmount string) (*big.Int, error) {
-	fmt.Println(ethAmount)
+type FaucetResponse struct {
+	Address string `json:"address"`
+	Tx      string `json:"tx"`
+}
 
+func ethToWei(ethAmount string) (*big.Int, error) {
 	// 将 ETH 转换为 Wei
 	amountFloat, ok := new(big.Float).SetString(ethAmount)
 	if !ok {

@@ -1,36 +1,46 @@
 package chain
 
 import (
+	"crypto/ecdsa"
+	"errors"
 	"faucet/model"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/viper"
 )
 
 func Transfer(receive string, value *big.Int) (string, error) {
-	var trans model.Transaction
+	var trans model.RawTransaction
 
 	_, MaxPriority, MaxFee, err := GetGasPrice()
 	trans.MaxPriorityFeePerGas = MaxPriority
 	trans.MaxFeePerGas = MaxFee
 	to := common.HexToAddress(receive)
-	trans.ContractAddress = &to
+	trans.To = &to
 	trans.Value = value
 
 	sk := viper.GetString("faucet.private_key")
 	trans.SK = sk
 
-	trans.GasLimit = 21000
-
-	tx, err := SendTransaction(trans)
+	privateKey, err := crypto.HexToECDSA(sk)
 	if err != nil {
 		return "", err
 	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return "", errors.New("error casting public key to ECDSA")
+	}
+	from := crypto.PubkeyToAddress(*publicKeyECDSA)
 
-	go CheckTransaction(tx)
+	gasLimit, err := GetGasLimit(&from, &to, trans.Data, trans.Value)
+	if err != nil {
+		return "", err
+	}
+	trans.GasLimit = gasLimit
 
-	fmt.Println("提交转账交易: ", tx)
-	return tx, nil
+	tx, err := SendTransaction(trans)
+	return tx, err
 }

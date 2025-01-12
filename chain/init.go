@@ -1,20 +1,22 @@
 package chain
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/spf13/viper"
 )
 
 var EthClient *ethclient.Client
 var RpcClient *rpc.Client
 
-var rpcUrl = "https://eth-sepolia.g.alchemy.com/v2/YQHOAbPqR8tHixcwD-ZW5xxUtVjbEmHA"
-
-// var rpcUrl = "https://mainnet.infura.io/v3/672e64bfa6f144349608236513a79679"
-
 func init() {
+	rpcUrl := viper.GetString("rpc.EthSepolia")
+
+	fmt.Println(rpcUrl)
+
 	ethClient, err := ethclient.Dial(rpcUrl)
 	if err != nil {
 		log.Fatal(err)

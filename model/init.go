@@ -7,5 +7,5 @@ import (
 var db = config.DB
 
 func init() {
-	db.AutoMigrate(&Wallet{})
+	db.AutoMigrate(&Transaction{})
 }

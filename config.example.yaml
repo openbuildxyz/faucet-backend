@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+faucet:
+  private_key: 
+  rpc_url: 
+  faucet_amount: 
+
+log:
+  level: 
+  file: 
+
+rpc:
+  EthSepolia: 
+
+database:
+  host: 
+  port:
+  user: 
+  password: 
+  dbname: 
+  sslmode: 
+

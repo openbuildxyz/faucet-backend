@@ -7,6 +7,7 @@ import (
 	"errors"
 	"faucet/model"
 	"fmt"
+	"log"
 	"math/big"
 	"strings"
 	"time"
@@ -17,7 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-func SendTransaction(transaction model.Transaction) (string, error) {
+func SendTransaction(transaction model.RawTransaction) (string, error) {
 	privateKey, err := crypto.HexToECDSA(transaction.SK)
 	if err != nil {
 		// log.Fatal(err)
@@ -47,7 +48,7 @@ func SendTransaction(transaction model.Transaction) (string, error) {
 		GasTipCap: transaction.MaxPriorityFeePerGas, // 设置合适的 MaxPriorityFeePerGas
 		GasFeeCap: transaction.MaxFeePerGas,         // 设置合适的 MaxFeePerGas
 		Gas:       transaction.GasLimit,             // 设置合适的 Gas Limit
-		To:        transaction.ContractAddress,
+		To:        transaction.To,
 		Value:     transaction.Value,
 		Data:      transaction.Data,
 	})
@@ -147,7 +148,7 @@ func GetGasPrice() (*big.Int, *big.Int, *big.Int, error) {
 	return baseFeePerGas, maxPriorityFeePerGas, maxFeePerGas, nil
 }
 
-func GetGasLimit(fromAddress, toAddress *common.Address, data []byte, value *big.Int) uint64 {
+func GetGasLimit(fromAddress, toAddress *common.Address, data []byte, value *big.Int) (uint64, error) {
 	// 构造交易数据
 	tx := map[string]interface{}{
 		"from":  fromAddress,
@@ -158,9 +159,20 @@ func GetGasLimit(fromAddress, toAddress *common.Address, data []byte, value *big
 
 	var gasLimit hexutil.Uint64
 	if err := RpcClient.CallContext(context.Background(), &gasLimit, "eth_estimateGas", tx); err != nil {
-		fmt.Printf("Failed to estimate gas: %v", err)
+		return 0, err
 	}
 
-	fmt.Printf("Estimated Gas: %d\n", gasLimit)
-	return uint64(gasLimit)
+	return uint64(gasLimit), nil
+}
+
+// 获取当前 Gas Price
+func getGasPrice() *big.Float {
+	gasPrice, err := EthClient.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatalf("获取 Gas Price 失败: %v", err)
+	}
+
+	// 格式化 Gas Price 为 Gwei
+	gasPriceGwei := new(big.Float).Quo(new(big.Float).SetInt(gasPrice), big.NewFloat(1e9))
+	return gasPriceGwei
 }
