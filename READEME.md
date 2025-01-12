@@ -4,9 +4,9 @@ This is the backend service for the OpenBuild Faucet project, built using **Gin*
 
 ## Dependencies 
 
-- **Go**: 1.22
-- **Gin**: 1.10
-- **go-ethereum**: 1.14
+- **Go**: 1.22  
+- **Gin**: 1.10  
+- **go-ethereum**: 1.14  
 
 ## Quick Start
 
