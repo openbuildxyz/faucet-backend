@@ -10,9 +10,24 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 func HandleFaucet(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		logger.Log.Errorf("Invalid request: %v", "no token")
+		utils.ErrorResponse(c, http.StatusUnauthorized, "", nil)
+		return
+	}
+
+	user, err := model.GetUserByToken(authHeader)
+	if err != nil {
+		logger.Log.Errorf("Invalid request: %v", "no token")
+		utils.ErrorResponse(c, http.StatusUnauthorized, "", nil)
+		return
+	}
+
 	var req FaucetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Log.Errorf("Invalid request: %v", err)
@@ -26,6 +41,37 @@ func HandleFaucet(c *gin.Context) {
 		return
 	}
 
+	if req.ChainID != "20143" || req.TokenSymbol != "DMON" {
+		logger.Log.Errorf("Invalid token info: chainid: %s, token: %s", req.ChainID, req.TokenSymbol)
+		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("invalid token info %s %s", req.ChainID, req.TokenSymbol), nil)
+		return
+	}
+
+	amountLimit := viper.GetString("monad.amount")
+	if req.Amount != amountLimit {
+		logger.Log.Errorf("only claim 1 DMON at a time, %s", req.Amount)
+		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("only claim %s DMON at a time", amountLimit), nil)
+		return
+	}
+
+	wallet, err := model.GetTransactionByAddress(req.Address)
+	if err == nil {
+		if utils.IsWithinLast24Hours(wallet.CreatedAt) {
+			logger.Log.Errorf("This wallet %s has already made a request. Please try again later.", req.Address)
+			utils.ErrorResponse(c, http.StatusBadRequest, "This wallet has already made a request. Please try again later.", nil)
+			return
+		}
+	}
+
+	u, err := model.GetTransactionByUid(user.Uid)
+	if err == nil {
+		if utils.IsWithinLast24Hours(u.CreatedAt) {
+			logger.Log.Errorf("This user %d has already made a request. Please try again later.", u.Uid)
+			utils.ErrorResponse(c, http.StatusBadRequest, "You has already made a request. Please try again later.", nil)
+			return
+		}
+	}
+
 	tx := &model.Transaction{
 		Address:     req.Address,
 		Amount:      req.Amount,
@@ -33,7 +79,8 @@ func HandleFaucet(c *gin.Context) {
 		Status:      "pending", // 设置初始状态为 "pending"
 		TokenSymbol: req.TokenSymbol,
 		// ChainType:   req.ChainType,
-		// ChainID:     req.ChainID,
+		ChainID: req.ChainID,
+		Uid:     user.Uid,
 		// RpcURL:      req.RpcURL,
 	}
 

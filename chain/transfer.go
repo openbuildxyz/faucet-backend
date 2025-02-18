@@ -14,8 +14,8 @@ import (
 func Transfer(receive string, value *big.Int) (string, error) {
 	var trans model.RawTransaction
 
-	_, MaxPriority, MaxFee, err := GetGasPrice()
-	trans.MaxPriorityFeePerGas = MaxPriority
+	_, _, MaxFee, err := GetGasPrice()
+	trans.MaxPriorityFeePerGas = big.NewInt(52)
 	trans.MaxFeePerGas = MaxFee
 	to := common.HexToAddress(receive)
 	trans.To = &to

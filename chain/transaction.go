@@ -33,13 +33,13 @@ func SendTransaction(transaction model.RawTransaction) (string, error) {
 	}
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	nonce, err := EthClient.PendingNonceAt(context.Background(), fromAddress)
+	nonce, err := Client.PendingNonceAt(context.Background(), fromAddress)
 	if err != nil {
 		// log.Fatal(err)
 		return "", err
 	}
 
-	chainID, err := EthClient.NetworkID(context.Background())
+	chainID, err := Client.NetworkID(context.Background())
 
 	// 使用types.NewTx创建EIP-1559类型的交易
 	tx := types.NewTx(&types.DynamicFeeTx{
@@ -60,7 +60,7 @@ func SendTransaction(transaction model.RawTransaction) (string, error) {
 		return "", err
 	}
 
-	err = EthClient.SendTransaction(context.Background(), signedTx)
+	err = Client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
 		// log.Fatal(err)
 		return "", err
@@ -86,7 +86,7 @@ func CheckTransaction(tx string) (bool, error) {
 			return false, nil
 		}
 		time.Sleep(10 * time.Second)
-		_, isPending, err := EthClient.TransactionByHash(context.Background(), txHash)
+		_, isPending, err := Client.TransactionByHash(context.Background(), txHash)
 		if err != nil {
 			fmt.Println("Error getting transaction: ", err)
 			errInfo := fmt.Sprintf("%s", err.Error())
@@ -98,7 +98,7 @@ func CheckTransaction(tx string) (bool, error) {
 		}
 
 		if !isPending {
-			receipt, err := EthClient.TransactionReceipt(context.Background(), txHash)
+			receipt, err := Client.TransactionReceipt(context.Background(), txHash)
 			if err != nil {
 				errInfo := fmt.Sprintf("%s", err.Error())
 				if strings.Contains(errInfo, "not found") {
@@ -167,7 +167,7 @@ func GetGasLimit(fromAddress, toAddress *common.Address, data []byte, value *big
 
 // 获取当前 Gas Price
 func getGasPrice() *big.Float {
-	gasPrice, err := EthClient.SuggestGasPrice(context.Background())
+	gasPrice, err := Client.SuggestGasPrice(context.Background())
 	if err != nil {
 		log.Fatalf("获取 Gas Price 失败: %v", err)
 	}

@@ -9,20 +9,20 @@ import (
 	"github.com/spf13/viper"
 )
 
-var EthClient *ethclient.Client
+var Client *ethclient.Client
 var RpcClient *rpc.Client
 
 func init() {
-	rpcUrl := viper.GetString("rpc.EthSepolia")
+	rpcUrl := viper.GetString("rpc.MonadDevnet")
 
 	fmt.Println(rpcUrl)
 
-	ethClient, err := ethclient.Dial(rpcUrl)
+	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	EthClient = ethClient
+	Client = client
 
 	// rpc
 	rpcClient, err := rpc.Dial(rpcUrl)

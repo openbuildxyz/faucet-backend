@@ -3,6 +3,7 @@ package main
 import (
 	_ "faucet/config"
 	"faucet/logger"
+	"faucet/middleware"
 	"faucet/route"
 	"fmt"
 
@@ -18,7 +19,7 @@ func main() {
 
 	// 初始化 Gin
 	r := gin.Default()
-
+	r.Use(middleware.LeakyBucketRateLimiter(30))
 	// 使用自定义的路由配置
 	route.SetupRouter(r)
 

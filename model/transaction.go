@@ -15,6 +15,7 @@ type Transaction struct {
 	ChainID      string `json:"chain_id"`                     // 链 ID，例如 Ethereum 主网为 1，BSC 为 56
 	RpcURL       string `json:"rpc_url"`                      // 对应链的 RPC URL，例如 Infura、Alchemy 等 URL
 	ErrorMessage string `json:"error_message"`                // 错误信息
+	Uid          uint   `json:"uid"`
 }
 
 func CreateTransaction(t *Transaction) error {
@@ -26,7 +27,15 @@ func CreateTransaction(t *Transaction) error {
 
 func GetTransactionByAddress(address string) (*Transaction, error) {
 	var t Transaction
-	if err := db.Where("address = ?", address).First(&t).Error; err != nil {
+	if err := db.Where("address = ?", address).Last(&t).Error; err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+func GetTransactionByUid(uid uint) (*Transaction, error) {
+	var t Transaction
+	if err := db.Where("uid = ?", uid).Last(&t).Error; err != nil {
 		return nil, err
 	}
 	return &t, nil

@@ -8,4 +8,5 @@ var db = config.DB
 
 func init() {
 	db.AutoMigrate(&Transaction{})
+	db.AutoMigrate(&User{})
 }
