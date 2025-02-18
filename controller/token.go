@@ -17,14 +17,14 @@ func HandleFaucet(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
 		logger.Log.Errorf("Invalid request: %v", "no token")
-		utils.ErrorResponse(c, http.StatusUnauthorized, "", nil)
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue.", nil)
 		return
 	}
 
 	user, err := model.GetUserByToken(authHeader)
 	if err != nil {
 		logger.Log.Errorf("Invalid request: %v", "no token")
-		utils.ErrorResponse(c, http.StatusUnauthorized, "", nil)
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue.", nil)
 		return
 	}
 
