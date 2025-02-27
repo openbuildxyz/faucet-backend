@@ -16,6 +16,7 @@ type Transaction struct {
 	RpcURL       string `json:"rpc_url"`                      // 对应链的 RPC URL，例如 Infura、Alchemy 等 URL
 	ErrorMessage string `json:"error_message"`                // 错误信息
 	Uid          uint   `json:"uid"`
+	Github       string `json:"github"`
 }
 
 func CreateTransaction(t *Transaction) error {
@@ -36,6 +37,14 @@ func GetTransactionByAddress(address string) (*Transaction, error) {
 func GetTransactionByUid(uid uint) (*Transaction, error) {
 	var t Transaction
 	if err := db.Where("uid = ?", uid).Last(&t).Error; err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+func GetTransactionByGithub(github string) (*Transaction, error) {
+	var t Transaction
+	if err := db.Where("github = ?", github).Last(&t).Error; err != nil {
 		return nil, err
 	}
 	return &t, nil

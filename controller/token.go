@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"faucet/chain"
 	"faucet/logger"
 	"faucet/model"
@@ -10,21 +11,20 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 func HandleFaucet(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
 		logger.Log.Errorf("Invalid request: %v", "no token")
-		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue.", nil)
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue!", nil)
 		return
 	}
 
 	user, err := model.GetUserByToken(authHeader)
 	if err != nil {
 		logger.Log.Errorf("Invalid request: %v", "no token")
-		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue.", nil)
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue!", nil)
 		return
 	}
 
@@ -38,19 +38,6 @@ func HandleFaucet(c *gin.Context) {
 	if !common.IsHexAddress(req.Address) {
 		logger.Log.Errorf("Invalid address: %s", req.Address)
 		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("invalid address: %s", req.Address), nil)
-		return
-	}
-
-	if req.ChainID != "20143" || req.TokenSymbol != "DMON" {
-		logger.Log.Errorf("Invalid token info: chainid: %s, token: %s", req.ChainID, req.TokenSymbol)
-		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("invalid token info %s %s", req.ChainID, req.TokenSymbol), nil)
-		return
-	}
-
-	amountLimit := viper.GetString("monad.amount")
-	if req.Amount != amountLimit {
-		logger.Log.Errorf("only claim 1 DMON at a time, %s", req.Amount)
-		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("only claim %s DMON at a time", amountLimit), nil)
 		return
 	}
 
@@ -72,15 +59,38 @@ func HandleFaucet(c *gin.Context) {
 		}
 	}
 
+	if user.Github == "" {
+		logger.Log.Errorf("Please bind your GitHub in OpenBuiild first, %d, %v", u.Uid, *user)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Please bind your GitHub in OpenBuiild first", nil)
+		return
+	}
+
+	g, err := model.GetTransactionByGithub(user.Github)
+	if err == nil {
+		if utils.IsWithinLast24Hours(g.CreatedAt) {
+			logger.Log.Errorf("This user %d, %s has already made a request. Please try again later.", g.Uid, g.Github)
+			utils.ErrorResponse(c, http.StatusBadRequest, "You has already made a request. Please try again later.", nil)
+			return
+		}
+	}
+
+	amount, err := RequestGitRank(user.Github)
+	if err != nil {
+		logger.Log.Errorf("RequestGitRank error, %s", err.Error())
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+
 	tx := &model.Transaction{
 		Address:     req.Address,
-		Amount:      req.Amount,
+		Amount:      amount,
 		TxHash:      "",
 		Status:      "pending", // 设置初始状态为 "pending"
-		TokenSymbol: req.TokenSymbol,
-		// ChainType:   req.ChainType,
-		ChainID: req.ChainID,
-		Uid:     user.Uid,
+		TokenSymbol: "MON",
+		ChainType:   "evm",
+		ChainID:     "10143",
+		Uid:         user.Uid,
+		Github:      user.Github,
 		// RpcURL:      req.RpcURL,
 	}
 
@@ -90,7 +100,7 @@ func HandleFaucet(c *gin.Context) {
 		return
 	}
 
-	txhash, err := sendTransaction(req.Address, req.Amount)
+	txhash, err := sendTransaction(req.Address, amount)
 	if err != nil {
 		tx.Status = "failed"
 		tx.ErrorMessage = err.Error()
@@ -122,4 +132,37 @@ func sendTransaction(address string, amount string) (string, error) {
 
 	tx, err := chain.Transfer(address, weiAmount)
 	return tx, err
+}
+
+func RequestGitRank(github string) (string, error) {
+	var params utils.HTTPRequestParams
+	params.URL = "https://github-readme-stats.vercel.app/api?username=" + github
+	params.Method = "GET"
+	content, err := utils.SendHTTPRequest(params)
+	if err != nil {
+		logger.Log.Errorf("Request github stat page errror, %s, %s", params.URL, err.Error())
+		return "", errors.New("Can't get GitHub's rank")
+	}
+
+	rank, err := utils.GetGitRank(content)
+	if err != nil {
+		logger.Log.Errorf("Parse GitHub's rank error, %s, %s", params.URL, err.Error())
+		return "", errors.New("Can't parse GitHub's rank")
+	}
+
+	var amount string
+	switch rank {
+	case "S":
+		amount = "1"
+	case "A":
+		amount = "0.4"
+	case "B":
+		amount = "0.3"
+	case "C":
+		amount = "0.1"
+	default:
+		logger.Log.Errorf("github's rank is invalid, %s, %s", params.URL, rank)
+		return "", errors.New("GitHub's rank is invalid")
+	}
+	return amount, nil
 }

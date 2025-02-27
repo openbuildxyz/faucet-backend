@@ -6,10 +6,7 @@ import (
 )
 
 type FaucetRequest struct {
-	Address     string `json:"address" binding:"required"`
-	Amount      string `json:"amount" binding:"required"`
-	TokenSymbol string `json:"token_symbol" binding:"required"`
-	ChainID     string `json:"chain_id" binding:"required"`
+	Address string `json:"address" binding:"required"`
 }
 
 type SignRequest struct {
@@ -49,6 +46,7 @@ type UserData struct {
 	Avatar   string `json:"avatar"`
 	UserName string `json:"user_name"`
 	Email    string `json:"email"`
+	Github   string `json:"github"`
 }
 
 // 定义顶层响应的结构体

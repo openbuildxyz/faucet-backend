@@ -5,6 +5,7 @@ import (
 	"faucet/logger"
 	"faucet/model"
 	"faucet/utils"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -52,14 +53,17 @@ func HandleGetUser(c *gin.Context) {
 
 	if resp.Status != 200 {
 		logger.Log.Errorf("ServerError: %v", resp)
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		utils.ErrorResponse(c, http.StatusInternalServerError, resp.Message, nil)
 		return
 	}
+
+	fmt.Println(resp)
 
 	user.Uid = resp.Data.Uid
 	user.Avatar = resp.Data.Avatar
 	user.Email = resp.Data.Email
 	user.Username = resp.Data.UserName
+	user.Github = resp.Data.Github
 	err = model.UpdateUser(user)
 	if err != nil {
 		logger.Log.Errorf("ServerError: %v", err)

@@ -8,6 +8,7 @@ type User struct {
 	Avatar   string `json:"avatar"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Github   string `json:"github"`
 	Token    string `json:"token"`
 	TokenId  string `json:"token_id"` // for oauth request
 }
