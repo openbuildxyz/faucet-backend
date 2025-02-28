@@ -31,13 +31,13 @@ func HandleFaucet(c *gin.Context) {
 	var req FaucetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Log.Errorf("Invalid request: %v", err)
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request. Please try again later.", nil)
 		return
 	}
 
 	if !common.IsHexAddress(req.Address) {
 		logger.Log.Errorf("Invalid address: %s", req.Address)
-		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("invalid address: %s", req.Address), nil)
+		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Invalid address: %s", req.Address), nil)
 		return
 	}
 
@@ -45,7 +45,7 @@ func HandleFaucet(c *gin.Context) {
 	if err == nil {
 		if utils.IsWithinLast24Hours(wallet.CreatedAt) {
 			logger.Log.Errorf("This wallet %s has already made a request. Please try again later.", req.Address)
-			utils.ErrorResponse(c, http.StatusBadRequest, "This wallet has already made a request. Please try again later.", nil)
+			utils.ErrorResponse(c, http.StatusBadRequest, "This wallet has already made a request in 24 hours. Please try again later.", nil)
 			return
 		}
 	}
@@ -54,7 +54,7 @@ func HandleFaucet(c *gin.Context) {
 	if err == nil {
 		if utils.IsWithinLast24Hours(u.CreatedAt) {
 			logger.Log.Errorf("This user %d has already made a request. Please try again later.", u.Uid)
-			utils.ErrorResponse(c, http.StatusBadRequest, "You has already made a request. Please try again later.", nil)
+			utils.ErrorResponse(c, http.StatusBadRequest, "You has already made a request in 24 hours. Please try again later.", nil)
 			return
 		}
 	}
@@ -69,7 +69,7 @@ func HandleFaucet(c *gin.Context) {
 	if err == nil {
 		if utils.IsWithinLast24Hours(g.CreatedAt) {
 			logger.Log.Errorf("This user %d, %s has already made a request. Please try again later.", g.Uid, g.Github)
-			utils.ErrorResponse(c, http.StatusBadRequest, "You has already made a request. Please try again later.", nil)
+			utils.ErrorResponse(c, http.StatusBadRequest, "You has already made a request in 24 hours. Please try again later.", nil)
 			return
 		}
 	}
@@ -96,7 +96,7 @@ func HandleFaucet(c *gin.Context) {
 
 	if err := model.CreateTransaction(tx); err != nil {
 		logger.Log.Errorf("Failed to create transaction record: %v", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
 		return
 	}
 
@@ -105,12 +105,13 @@ func HandleFaucet(c *gin.Context) {
 		tx.Status = "failed"
 		tx.ErrorMessage = err.Error()
 		if err := model.UpdateTransacton(tx); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
+			logger.Log.Errorf("Failed to update transaction record: %s, %s", req.Address, err.Error())
+			utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
 			return
 		}
 
-		logger.Log.Errorf("Failed to send transaction: %v", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		logger.Log.Errorf("Failed to send transaction: %s, %s", req.Address, err.Error())
+		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
 		return
 	}
 

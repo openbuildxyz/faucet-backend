@@ -5,7 +5,6 @@ import (
 	"faucet/logger"
 	"faucet/model"
 	"faucet/utils"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -56,8 +55,6 @@ func HandleGetUser(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusInternalServerError, resp.Message, nil)
 		return
 	}
-
-	fmt.Println(resp)
 
 	user.Uid = resp.Data.Uid
 	user.Avatar = resp.Data.Avatar
