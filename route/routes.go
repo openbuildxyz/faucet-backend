@@ -9,7 +9,7 @@ import (
 
 func SetupRouter(r *gin.Engine) {
 	r.Use(middleware.Cors())
-	r.POST("/api/faucet", controller.HandleFaucet)
-	r.POST("/api/sign", controller.HandleSign)
-	r.GET("/api/user", controller.HandleGetUser)
+	r.POST("/sign", controller.HandleSign)
+	r.GET("/user", middleware.JWTAuthMiddleware(), controller.HandleGetUser)
+	r.POST("/faucet", middleware.JWTAuthMiddleware(), controller.HandleFaucet)
 }

@@ -5,7 +5,6 @@ import (
 	"faucet/logger"
 	"faucet/model"
 	"faucet/utils"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +15,7 @@ func HandleSign(c *gin.Context) {
 	var req SignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Log.Errorf("Invalid request: %v", err)
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request. Please try again later.", nil)
 		return
 	}
 
@@ -33,7 +32,7 @@ func HandleSign(c *gin.Context) {
 	result, err := utils.SendHTTPRequest(reqArgs)
 	if err != nil {
 		logger.Log.Errorf("ServerError: %v", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
 		return
 	}
 
@@ -41,27 +40,37 @@ func HandleSign(c *gin.Context) {
 	err = json.Unmarshal([]byte(result), &resp)
 	if err != nil {
 		logger.Log.Errorf("ServerError: %v", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
 		return
 	}
 
 	if resp.Status != 200 {
 		logger.Log.Errorf("ServerError: %v", resp)
-		utils.ErrorResponse(c, http.StatusInternalServerError, "", nil)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
+		return
+	}
+
+	var user model.User
+	// oauth
+	user.OauthToken = resp.Data.Token
+	err = model.CreateUser(&user)
+	if err != nil {
+		logger.Log.Errorf("ServerError: %v", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
+		return
+	}
+
+	// gin token
+	token, err := utils.GenerateToken(resp.Data.Token)
+	if err != nil {
+		logger.Log.Errorf("GenerateToken err: %s", err.Error())
+		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
 		return
 	}
 
 	var response SignResponse
-	response.Token = resp.Data.Token
-
-	var user model.User
-	user.Token = fmt.Sprintf("Bearer %s", resp.Data.Token)
-	err = model.CreateUser(&user)
-	if err != nil {
-		logger.Log.Errorf("ServerError: %v", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
-		return
-	}
+	// oauth token
+	response.Token = token
 
 	utils.SuccessResponse(c, http.StatusOK, "success", response)
 }

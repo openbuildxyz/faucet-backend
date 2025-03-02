@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/ethereum/go-ethereum v1.14.12
 	github.com/gin-gonic/gin v1.10.0
-	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.19.0
 	go.uber.org/ratelimit v0.3.1

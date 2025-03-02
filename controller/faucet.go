@@ -14,14 +14,20 @@ import (
 )
 
 func HandleFaucet(c *gin.Context) {
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
+	oauthToken, exists := c.Get("oauth_token")
+	if !exists {
 		logger.Log.Errorf("Invalid request: %v", "no token")
 		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue!", nil)
 		return
 	}
 
-	user, err := model.GetUserByToken(authHeader)
+	oToken, ok := oauthToken.(string)
+	if !ok {
+		logger.Log.Errorf("Invalid request: %v", "no token")
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue!", nil)
+	}
+
+	user, err := model.GetUserByToken(oToken)
 	if err != nil {
 		logger.Log.Errorf("Invalid request: %v", "no token")
 		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue!", nil)
@@ -45,7 +51,7 @@ func HandleFaucet(c *gin.Context) {
 	if err == nil {
 		if utils.IsWithinLast24Hours(wallet.CreatedAt) {
 			logger.Log.Errorf("This wallet %s has already made a request. Please try again later.", req.Address)
-			utils.ErrorResponse(c, http.StatusBadRequest, "This wallet has already made a request in 24 hours. Please try again later.", nil)
+			utils.ErrorResponse(c, http.StatusBadRequest, "You has already made a request in 24 hours. Please try again later.", nil)
 			return
 		}
 	}
