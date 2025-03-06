@@ -148,13 +148,13 @@ func RequestGitRank(github string) (string, error) {
 	content, err := utils.SendHTTPRequest(params)
 	if err != nil {
 		logger.Log.Errorf("Request github stat page errror, %s, %s", params.URL, err.Error())
-		return "", errors.New("Can't get GitHub's rank")
+		return "", errors.New("Can't get GitHub Rank")
 	}
 
 	rank, err := utils.GetGitRank(content)
 	if err != nil {
 		logger.Log.Errorf("Parse GitHub's rank error, %s, %s", params.URL, err.Error())
-		return "", errors.New("Can't parse GitHub's rank")
+		return "", errors.New("Can't parse GitHub Rank")
 	}
 
 	var amount string
