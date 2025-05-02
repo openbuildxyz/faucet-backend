@@ -7,6 +7,7 @@ import (
 
 type FaucetRequest struct {
 	Address string `json:"address" binding:"required"`
+	Token   string `json:"token" binding:"required"`
 }
 
 type SignRequest struct {

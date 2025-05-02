@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func Transfer(receive string, value *big.Int) (string, error) {
+func Transfer(receive string, token string, value *big.Int) (string, error) {
 	var trans model.RawTransaction
 
 	_, _, MaxFee, err := GetGasPrice()
@@ -40,6 +40,16 @@ func Transfer(receive string, value *big.Int) (string, error) {
 		return "", err
 	}
 	trans.GasLimit = gasLimit
+
+	var chainInfo string
+	if token == "MON" {
+		chainInfo = "rpc.MonadDevnet"
+	}
+	if token == "0G" {
+		chainInfo = "rpc.ZeroTestnet"
+	}
+
+	ReconnetRpc(chainInfo)
 
 	tx, err := SendTransaction(trans)
 	return tx, err

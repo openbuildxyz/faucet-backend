@@ -12,6 +12,10 @@ log:
 
 rpc:
   EthSepolia: 
+  MonadDevnet: 
+  MonadDevnetExplorer: 
+  ZeroTestnet: 
+  ZeroTestnetExplorer: 
 
 database:
   host: 

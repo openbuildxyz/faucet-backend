@@ -47,7 +47,13 @@ func HandleFaucet(c *gin.Context) {
 		return
 	}
 
-	wallet, err := model.GetTransactionByAddress(req.Address)
+	if req.Token != "MON" && req.Token != "0G" {
+		logger.Log.Errorf("Invalid token: %s", req.Token)
+		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Invalid token: %s", req.Token), nil)
+		return
+	}
+
+	wallet, err := model.GetTransactionByAddress(req.Address, req.Token)
 	if err == nil {
 		if utils.IsWithinLast24Hours(wallet.CreatedAt) {
 			logger.Log.Errorf("This wallet %s has already made a request. Please try again later.", req.Address)
@@ -56,7 +62,7 @@ func HandleFaucet(c *gin.Context) {
 		}
 	}
 
-	u, err := model.GetTransactionByUid(user.Uid)
+	u, err := model.GetTransactionByUid(user.Uid, req.Token)
 	if err == nil {
 		if utils.IsWithinLast24Hours(u.CreatedAt) {
 			logger.Log.Errorf("This user %d has already made a request. Please try again later.", u.Uid)
@@ -71,7 +77,7 @@ func HandleFaucet(c *gin.Context) {
 		return
 	}
 
-	g, err := model.GetTransactionByGithub(user.Github)
+	g, err := model.GetTransactionByGithub(user.Github, req.Token)
 	if err == nil {
 		if utils.IsWithinLast24Hours(g.CreatedAt) {
 			logger.Log.Errorf("This user %d, %s has already made a request. Please try again later.", g.Uid, g.Github)
@@ -87,14 +93,22 @@ func HandleFaucet(c *gin.Context) {
 		return
 	}
 
+	var chain string
+	if req.Token == "MON" {
+		chain = "10143"
+	}
+	if req.Token == "0G" {
+		chain = "80087"
+	}
+
 	tx := &model.Transaction{
 		Address:     req.Address,
 		Amount:      amount,
 		TxHash:      "",
 		Status:      "pending", // 设置初始状态为 "pending"
-		TokenSymbol: "MON",
+		TokenSymbol: req.Token,
 		ChainType:   "evm",
-		ChainID:     "10143",
+		ChainID:     chain,
 		Uid:         user.Uid,
 		Github:      user.Github,
 		// RpcURL:      req.RpcURL,
@@ -106,7 +120,7 @@ func HandleFaucet(c *gin.Context) {
 		return
 	}
 
-	txhash, err := sendTransaction(req.Address, amount)
+	txhash, err := sendTransaction(req.Address, req.Token, amount)
 	if err != nil {
 		tx.Status = "failed"
 		tx.ErrorMessage = err.Error()
@@ -130,14 +144,14 @@ func HandleFaucet(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, "success", faucetResp)
 }
 
-func sendTransaction(address string, amount string) (string, error) {
+func sendTransaction(address, token, amount string) (string, error) {
 	// TODO:
 	weiAmount, err := ethToWei(amount)
 	if err != nil {
 		return "", err
 	}
 
-	tx, err := chain.Transfer(address, weiAmount)
+	tx, err := chain.Transfer(address, token, weiAmount)
 	return tx, err
 }
 
