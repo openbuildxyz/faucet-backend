@@ -47,7 +47,7 @@ func HandleFaucet(c *gin.Context) {
 		return
 	}
 
-	if req.Token != "MON" && req.Token != "0G" {
+	if req.Token != "MON" && req.Token != "0G" && req.Token != "CAMP" {
 		logger.Log.Errorf("Invalid token: %s", req.Token)
 		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Invalid token: %s", req.Token), nil)
 		return
@@ -99,6 +99,9 @@ func HandleFaucet(c *gin.Context) {
 	}
 	if req.Token == "0G" {
 		chain = "80087"
+	}
+	if req.Token == "CAMP" {
+		chain = "123420001114"
 	}
 
 	tx := &model.Transaction{
