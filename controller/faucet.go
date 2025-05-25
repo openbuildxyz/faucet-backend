@@ -98,7 +98,7 @@ func HandleFaucet(c *gin.Context) {
 		chain = "10143"
 	}
 	if req.Token == "0G" {
-		chain = "80087"
+		chain = "16601"
 	}
 	if req.Token == "CAMP" {
 		chain = "123420001114"

@@ -28,7 +28,7 @@ func CreateTransaction(t *Transaction) error {
 
 func GetTransactionByAddress(address, token string) (*Transaction, error) {
 	var t Transaction
-	if err := db.Where("address = ?", address).Last(&t).Error; err != nil {
+	if err := db.Where("address = ?", address).Where("token = ?", token).Last(&t).Error; err != nil {
 		return nil, err
 	}
 	return &t, nil
@@ -36,7 +36,7 @@ func GetTransactionByAddress(address, token string) (*Transaction, error) {
 
 func GetTransactionByUid(uid uint, token string) (*Transaction, error) {
 	var t Transaction
-	if err := db.Where("uid = ?", uid).Last(&t).Error; err != nil {
+	if err := db.Where("uid = ?", uid).Where("token = ?", token).Last(&t).Error; err != nil {
 		return nil, err
 	}
 	return &t, nil
@@ -44,7 +44,7 @@ func GetTransactionByUid(uid uint, token string) (*Transaction, error) {
 
 func GetTransactionByGithub(github, token string) (*Transaction, error) {
 	var t Transaction
-	if err := db.Where("github = ?", github).Last(&t).Error; err != nil {
+	if err := db.Where("github = ?", github).Where("token = ?", token).Last(&t).Error; err != nil {
 		return nil, err
 	}
 	return &t, nil

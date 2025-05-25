@@ -14,14 +14,17 @@ import (
 func Transfer(receive string, token string, value *big.Int) (string, error) {
 	var trans model.RawTransaction
 
-	_, _, MaxFee, err := GetGasPrice()
-	trans.MaxPriorityFeePerGas = big.NewInt(52)
+	_, PriorityFee, MaxFee, err := GetGasPrice()
+	trans.MaxPriorityFeePerGas = PriorityFee
 	trans.MaxFeePerGas = MaxFee
 	to := common.HexToAddress(receive)
 	trans.To = &to
 	trans.Value = value
 
 	sk := viper.GetString("faucet.private_key")
+	if token == "0G" {
+		sk = viper.GetString("faucet.zerog_private_key")
+	}
 	trans.SK = sk
 
 	privateKey, err := crypto.HexToECDSA(sk)
