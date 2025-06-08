@@ -86,11 +86,20 @@ func HandleFaucet(c *gin.Context) {
 		}
 	}
 
-	amount, err := RequestGitRank(user.Github)
+	var amount string
+	amount, err = RequestGitRank(user.Github)
 	if err != nil {
 		logger.Log.Errorf("RequestGitRank error, %s", err.Error())
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
+	}
+	if req.Token == "MON" {
+		amount, err = RequestGitRankWithToken(user.Github, req.Token)
+		if err != nil {
+			logger.Log.Errorf("RequestGitRank error, %s", err.Error())
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
+			return
+		}
 	}
 
 	var chain string
@@ -184,6 +193,39 @@ func RequestGitRank(github string) (string, error) {
 		amount = "0.3"
 	case "C":
 		amount = "0.1"
+	default:
+		logger.Log.Errorf("github's rank is invalid, %s, %s", params.URL, rank)
+		return "", errors.New("GitHub's rank is invalid")
+	}
+	return amount, nil
+}
+
+func RequestGitRankWithToken(github string, token string) (string, error) {
+	var params utils.HTTPRequestParams
+	params.URL = "https://github-readme-stats.vercel.app/api?username=" + github
+	params.Method = "GET"
+	content, err := utils.SendHTTPRequest(params)
+	if err != nil {
+		logger.Log.Errorf("Request github stat page errror, %s, %s", params.URL, err.Error())
+		return "", errors.New("Can't get GitHub Rank")
+	}
+
+	rank, err := utils.GetGitRank(content)
+	if err != nil {
+		logger.Log.Errorf("Parse GitHub's rank error, %s, %s", params.URL, err.Error())
+		return "", errors.New("Can't parse GitHub Rank")
+	}
+
+	var amount string
+	switch rank {
+	case "S":
+		amount = "5"
+	case "A":
+		amount = "4"
+	case "B":
+		amount = "3.5"
+	case "C":
+		amount = "3"
 	default:
 		logger.Log.Errorf("github's rank is invalid, %s, %s", params.URL, rank)
 		return "", errors.New("GitHub's rank is invalid")
