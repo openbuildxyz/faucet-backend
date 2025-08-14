@@ -54,6 +54,9 @@ func Transfer(receive string, token string, value *big.Int) (string, error) {
 	if token == "CAMP" {
 		chainInfo = "rpc.CampTestnet"
 	}
+	if token == "NEX" {
+		chainInfo = "rpc.NexusTestnet"
+	}
 
 	ReconnetRpc(chainInfo)
 

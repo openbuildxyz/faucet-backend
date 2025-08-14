@@ -25,6 +25,7 @@ func HandleFaucet(c *gin.Context) {
 	if !ok {
 		logger.Log.Errorf("Invalid request: %v", "no token")
 		utils.ErrorResponse(c, http.StatusUnauthorized, "Please log in to continue!", nil)
+		return
 	}
 
 	user, err := model.GetUserByToken(oToken)
@@ -47,7 +48,7 @@ func HandleFaucet(c *gin.Context) {
 		return
 	}
 
-	if req.Token != "MON" && req.Token != "0G" && req.Token != "CAMP" {
+	if req.Token != "MON" && req.Token != "0G" && req.Token != "CAMP" && req.Token != "NEX" {
 		logger.Log.Errorf("Invalid token: %s", req.Token)
 		utils.ErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Invalid token: %s", req.Token), nil)
 		return
@@ -93,14 +94,14 @@ func HandleFaucet(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
-	// if req.Token == "MON" {
-	// 	amount, err = RequestGitRankWithToken(user.Github, req.Token)
-	// 	if err != nil {
-	// 		logger.Log.Errorf("RequestGitRank error, %s", err.Error())
-	// 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
-	// 		return
-	// 	}
-	// }
+	if req.Token == "NEX" {
+		amount, err = RequestGitRankWithToken(user.Github, req.Token)
+		if err != nil {
+			logger.Log.Errorf("RequestGitRank error, %s", err.Error())
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
+			return
+		}
+	}
 
 	var chain string
 	if req.Token == "MON" {
@@ -111,6 +112,9 @@ func HandleFaucet(c *gin.Context) {
 	}
 	if req.Token == "CAMP" {
 		chain = "123420001114"
+	}
+	if req.Token == "NEX" {
+		chain = "3940"
 	}
 
 	tx := &model.Transaction{
@@ -126,12 +130,6 @@ func HandleFaucet(c *gin.Context) {
 		// RpcURL:      req.RpcURL,
 	}
 
-	if err := model.CreateTransaction(tx); err != nil {
-		logger.Log.Errorf("Failed to create transaction record: %v", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
-		return
-	}
-
 	txhash, err := sendTransaction(req.Address, req.Token, amount)
 	if err != nil {
 		tx.Status = "failed"
@@ -143,6 +141,12 @@ func HandleFaucet(c *gin.Context) {
 		}
 
 		logger.Log.Errorf("Failed to send transaction: %s, %s", req.Address, err.Error())
+		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
+		return
+	}
+
+	if err := model.CreateTransaction(tx); err != nil {
+		logger.Log.Errorf("Failed to create transaction record: %v", err)
 		utils.ErrorResponse(c, http.StatusInternalServerError, "The system is currently busy. Please try again later.", nil)
 		return
 	}
