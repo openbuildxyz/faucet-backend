@@ -94,7 +94,7 @@ func HandleFaucet(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
-	if req.Token == "NEX" {
+	if req.Token == "NEX" || req.Token == "MON" {
 		amount, err = RequestGitRankWithToken(user.Github, req.Token)
 		if err != nil {
 			logger.Log.Errorf("RequestGitRank error, %s", err.Error())
