@@ -88,13 +88,13 @@ func HandleFaucet(c *gin.Context) {
 	}
 
 	var amount string
-	amount, err = RequestGitRankWithToken(user.Github, req.Token)
+	amount, err = RequestGitRank(user.Github)
 	if err != nil {
 		logger.Log.Errorf("RequestGitRank error, %s", err.Error())
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
-	if req.Token == "NEX" {
+	if req.Token == "NEX" || req.Token == "MON" {
 		amount, err = RequestGitRankWithToken(user.Github, req.Token)
 		if err != nil {
 			logger.Log.Errorf("RequestGitRank error, %s", err.Error())
